@@ -32,14 +32,19 @@ except ImportError as e:
 
 # Import analysis modules
 from src.analysis.topic_modeling import TopicModeler
+from src.analysis.sentiment_predictor import SentimentPredictor
 from src.visualization.dashboard import Dashboard, create_dashboard
 
 # Import dummy data generator
 from src.data.generators.dummy_data import DummyDataGenerator
 import pandas as pd
 import os
+import joblib
 from dotenv import load_dotenv
 from pathlib import Path
+
+# Initialize the sentiment predictor
+sentiment_predictor = SentimentPredictor()
 
 def load_sample_data():
     """Load sample data from the CSV file."""
@@ -194,9 +199,10 @@ def main():
             st.subheader("📊 Visualizations")
             
             # Create tabs for different visualizations
-            tab1, tab2, tab3, tab4 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "Topic Trends", "Sentiment Analysis", 
-                "Topic-Sentiment", "Word Cloud"
+                "Topic-Sentiment", "Word Cloud",
+                "Sentiment Predictor"
             ])
             
             # Initialize dashboard
@@ -222,32 +228,72 @@ def main():
                 
             with tab4:
                 if 'text' in data.columns and not data['text'].empty:
-                    st.write("### Most Common Words in Posts")
-                    dashboard.create_word_cloud(
-                        data=data,
-                        text_col='text',
-                        title='Word Cloud of Social Media Posts',
-                        max_words=100
-                    )
+                    st.write("### Most Common Words in Recent Posts")
+                    # Get the most recent 100 posts
+                    recent_texts = data.sort_values('created_at', ascending=False)\
+                                   .head(100)['text'].dropna().tolist()
+                    
+                    if recent_texts:
+                        wordcloud_fig = dashboard.create_word_cloud(
+                            texts=recent_texts,
+                            max_words=100,
+                            width=800,
+                            height=400
+                        )
+                        st.plotly_chart(wordcloud_fig, use_container_width=True)
+                    else:
+                        st.warning("No valid text data available for word cloud.")
                 else:
                     st.warning("No text data available for word cloud generation.")
-                fig = dashboard.create_sentiment_timeline(data)
-                st.plotly_chart(fig, use_container_width=True)
+                    
+            with tab5:
+                st.header("🔮 Sentiment Predictor")
                 
-            with tab3:
-                # Topic-sentiment chart
-                fig = dashboard.create_topic_sentiment_chart(data)
-                st.plotly_chart(fig, use_container_width=True)
+                # Train model button
+                if st.button("🔄 Train Model"):
+                    if 'data' in st.session_state and not st.session_state['data'].empty:
+                        data = st.session_state['data']
+                        if 'sentiment' in data.columns and 'text' in data.columns:
+                            with st.spinner("Training sentiment prediction model..."):
+                                try:
+                                    texts, labels = SentimentPredictor.prepare_training_data(data)
+                                    accuracy = sentiment_predictor.train(texts, labels)
+                                    st.success(f"Model trained successfully! Test accuracy: {accuracy:.2f}")
+                                except Exception as e:
+                                    st.error(f"Error training model: {str(e)}")
+                        else:
+                            st.warning("Training data requires 'text' and 'sentiment' columns.")
+                    else:
+                        st.warning("Please load data first.")
                 
-            with tab4:
-                # Create word cloud for the most recent 100 posts
-                recent_texts = data.sort_values('created_at', ascending=False)\
-                                .head(100)['text'].fillna('').astype(str).tolist()
-                if any(text.strip() for text in recent_texts):
-                    wordcloud_fig = dashboard.create_word_cloud(recent_texts)
-                    st.plotly_chart(wordcloud_fig, use_container_width=True)
-                else:
-                    st.warning("No text data available for word cloud.")
+                # Prediction section
+                st.subheader("Predict Sentiment")
+                user_input = st.text_area("Enter text to analyze:", "")
+                
+                if st.button("Analyze Sentiment") and user_input.strip():
+                    try:
+                        sentiment, confidence = sentiment_predictor.predict(user_input)
+                        
+                        # Display result with emoji
+                        emoji_map = {
+                            "Positive": "😊",
+                            "Neutral": "😐",
+                            "Negative": "😞"
+                        }
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Sentiment", f"{emoji_map.get(sentiment, '')} {sentiment}")
+                        with col2:
+                            st.metric("Confidence", f"{confidence*100:.1f}%")
+                        
+                        # Show a nice progress bar for confidence (ensure value is between 0 and 1)
+                        progress_value = min(max(abs(confidence), 0.0), 1.0)  # Ensure value is between 0 and 1
+                        st.progress(progress_value)
+                        
+                    except Exception as e:
+                        st.error(f"Error making prediction: {str(e)}")
+                        st.info("Please make sure the model is trained first.")
         
         # Add a button to regenerate sample data
         if data_source == "Sample Data":
@@ -261,6 +307,12 @@ def main():
 if __name__ == "__main__":
     # Load environment variables
     load_dotenv()
+    
+    # Create models directory if it doesn't exist
+    os.makedirs('models', exist_ok=True)
+    
+    # Set default data source based on environment variables
+    default_source = 1 if os.getenv('TWITTER_BEARER_TOKEN') and os.getenv('REDDIT_CLIENT_ID') else 0
     
     # Add custom CSS for better styling
     st.markdown("""

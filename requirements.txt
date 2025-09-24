@@ -19,11 +19,10 @@ scikit-learn
 xgboost
 lightgbm
 sentence-transformers
-gensim
-xgboost==1.7.6
-lightgbm==4.0.0
-sentence-transformers==2.2.2
-gensim==4.3.1
+gensim>=4.3.2,<5.0.0  # Updated to a version that supports Python 3.13
+xgboost>=1.7.6,<3.0.0
+lightgbm>=4.0.0,<5.0.0
+sentence-transformers>=2.2.2,<3.0.0
 
 # Time Series Analysis
 prophet==1.1.5
