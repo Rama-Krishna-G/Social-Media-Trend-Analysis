@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Ensure we're using Python 3.10
+echo "Setting up Python 3.10 environment..."
+
+# Install pyenv to manage Python versions
+curl https://pyenv.run | bash
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# Install Python 3.10.13 if not already installed
+if ! pyenv versions | grep -q "3.10.13"; then
+    echo "Installing Python 3.10.13..."
+    pyenv install 3.10.13 --skip-existing
+fi
+
+# Set Python 3.10.13 as the global version
+pyenv global 3.10.13
+
+# Verify Python version
+echo "Python version after setup:"
+python --version
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install -r requirements.txt
+
+# Download required NLTK data
+echo "Downloading NLTK data..."
+python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+
+echo "Build completed successfully!"
