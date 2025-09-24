@@ -10,9 +10,9 @@ python-dateutil
 
 # NLP & Text Processing
 spacy
-textblob==0.17.1
-nltk==3.8.1
-wordcloud==1.9.2
+textblob>=0.17.1
+nltk>=3.8.1
+wordcloud>=1.9.3
 
 # Machine Learning & Topic Modeling
 scikit-learn
@@ -30,15 +30,14 @@ prophet==1.1.5
 statsmodels==0.14.0
 
 # Visualization
-matplotlib==3.7.2
-seaborn==0.12.2
-plotly==5.15.0
-wordcloud==1.9.2
+matplotlib>=3.7.2
+seaborn>=0.12.2
+plotly>=5.15.0
 
 # Web Application
-streamlit==1.25.0
+streamlit>=1.25.0
 
 # Utilities
-tqdm==4.65.0
-python-dotenv==1.0.0
-pytest==7.4.0
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+pytest>=7.4.0

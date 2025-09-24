@@ -408,29 +408,43 @@ class Dashboard:
             margin=dict(b=0, l=0, r=0, t=30),
             height=height,
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
         )
         
         return fig
     
-    def create_dashboard(self, data: pd.DataFrame) -> go.Figure:
-        """
-        Create a comprehensive dashboard with multiple visualizations.
+def create_hashtag_network(
+    self,
+    hashtags_list: List[List[str]],
+    min_count: int = 2,
+    title: str = 'Hashtag Co-occurrence Network',
+    height: int = 600
+) -> go.Figure:
+    """
+    Create a network graph of co-occurring hashtags.
+    
+    Args:
+        hashtags_list: List of lists, where each sublist contains hashtags from a single post
+        min_count: Minimum number of co-occurrences to show an edge
+        title: Chart title
+        height: Figure height in pixels
         
-        Args:
-            data: DataFrame containing the analysis results
-            
-        Returns:
-            Plotly figure object with the dashboard
-        """
-        if data.empty:
-            logging.warning("No data provided for dashboard")
-            return go.Figure()
+    Returns:
+        Plotly figure object with the network graph
+    """
+    if not hashtags_list:
+        logging.warning("No hashtag data provided")
+        return go.Figure()
         
-        # Create subplots
-        from plotly.subplots import make_subplots
-        import plotly.graph_objects as go
+    # Count co-occurrences
+    co_occurrences = defaultdict(int)
+    nodes = set()
+    
+    for hashtags in hashtags_list:
+        # Convert to lowercase and remove '#' for consistency
+        hashtags = [h.lower().lstrip('#') for h in hashtags if h]
         
+        # Update nodes
+        nodes.update(hashtags)
         # Define layout
         fig = make_subplots(
             rows=3, cols=2,

@@ -199,16 +199,38 @@ def main():
                 "Topic-Sentiment", "Word Cloud"
             ])
             
-            # Create dashboard instance
+            # Initialize dashboard
             dashboard = Dashboard()
             
             with tab1:
-                # Topic trends chart
-                fig = dashboard.create_topic_trends_chart(data)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(
+                    dashboard.create_topic_trends_chart(data),
+                    use_container_width=True
+                )
                 
             with tab2:
-                # Sentiment timeline
+                st.plotly_chart(
+                    dashboard.create_sentiment_timeline(data),
+                    use_container_width=True
+                )
+                
+            with tab3:
+                st.plotly_chart(
+                    dashboard.create_topic_sentiment_chart(data),
+                    use_container_width=True
+                )
+                
+            with tab4:
+                if 'text' in data.columns and not data['text'].empty:
+                    st.write("### Most Common Words in Posts")
+                    dashboard.create_word_cloud(
+                        data=data,
+                        text_col='text',
+                        title='Word Cloud of Social Media Posts',
+                        max_words=100
+                    )
+                else:
+                    st.warning("No text data available for word cloud generation.")
                 fig = dashboard.create_sentiment_timeline(data)
                 st.plotly_chart(fig, use_container_width=True)
                 
